@@ -1,21 +1,21 @@
 /*
-	Sample JSON being processed here:
+   Sample JSON being processed here:
 
-	{
-	  "_class": "hudson.model.FreeStyleProject",
-	  "downstreamProjects": [
-	    {
-	      "_class": "hudson.model.FreeStyleProject",
-	      "name": "project_2019.1.x",
-	      "url": "https://jenkins.example.com/job/project_2019.1.x/"
-	    },
-	    {
-	      "_class": "hudson.model.FreeStyleProject",
-	      "name": "project_2019.1.x",
-	      "url": "https://jenkins.example.com/job/project_2019.1.x/"
-	    }
-	  ]
-	}
+   {
+     "_class": "hudson.model.FreeStyleProject",
+     "downstreamProjects": [
+       {
+         "_class": "hudson.model.FreeStyleProject",
+         "name": "project_2019.1.x",
+         "url": "https://jenkins.example.com/job/project_2019.1.x/"
+       },
+       {
+         "_class": "hudson.model.FreeStyleProject",
+         "name": "project_2019.1.x",
+         "url": "https://jenkins.example.com/job/project_2019.1.x/"
+       }
+     ]
+   }
 */
 
 package runners
@@ -24,97 +24,98 @@ import (
 	"encoding/json"
 
 	"fmt"
+	"strings"
+
 	"github.com/puppetlabs/pipeline-dashboard/lib/report/jenkins_types"
 	"github.com/puppetlabs/pipeline-dashboard/lib/report/utils"
-	"strings"
 )
 
 type Ordered struct {
-	utils.Getable
-	LastBuild          jenkins_types.Build     `json:"lastBuild"`
-	DownstreamProjects []jenkins_types.Project `json:"downstreamProjects"`
+    utils.Getable
+    LastBuild          jenkins_types.Build     `json:"lastBuild"`
+    DownstreamProjects []jenkins_types.Project `json:"downstreamProjects"`
 }
 
 func FromOrdered(url string, job string, version string) jenkins_types.Pipeline {
-	ko := Ordered{Getable: utils.Getable{URL: url}}
-	JobData := ko.Pull(job, version)
+    ko := Ordered{Getable: utils.Getable{URL: url}}
+    JobData := ko.Pull(job, version)
 
-	JobData.Version = version
-	JobData.PipelineJob = job
+    JobData.Version = version
+    JobData.PipelineJob = job
 
-	return JobData
+    return JobData
 }
 
 func (k *Ordered) filter() string {
-	return "/api/json?tree=lastBuild[url],downstreamProjects[name,url]"
+    return "/api/json?tree=lastBuild[url],downstreamProjects[name,url]"
 }
 
 func (o *Ordered) ProcessTopLevelBuilds(jd jenkins_types.BuildsAndJobs) jenkins_types.Builds {
-	var retVal jenkins_types.Builds
+    var retVal jenkins_types.Builds
 
-	for _, build := range jd.Builds {
-		jobForBuild := jenkins_types.FindJob(build, jd)
+    for _, build := range jd.Builds {
+        jobForBuild := jenkins_types.FindJob(build, jd)
 
-		build.Fetch()
-		fmt.Printf("Top Level Build/Parent: %s #%d\n", build.FullDisplayName, build.Number)
+        build.Fetch()
+        fmt.Printf("Top Level Build/Parent: %s #%d\n", build.FullDisplayName, build.Number)
 
-		var buildDownstreamJobs []jenkins_types.Job
-		if len(jobForBuild.DownstreamProjects) > 0 {
-			_, buildDownstreamJobs = jenkins_types.JobsFromDownstreamProjects(jobForBuild.LastBuild, jobForBuild.DownstreamProjects)
-		}
+        var buildDownstreamJobs []jenkins_types.Job
+        if len(jobForBuild.DownstreamProjects) > 0 {
+            _, buildDownstreamJobs = jenkins_types.JobsFromDownstreamProjects(jobForBuild.LastBuild, jobForBuild.DownstreamProjects)
+        }
 
-		for _, job := range buildDownstreamJobs {
-			lastBuild := job.LastBuild
-			if strings.Contains(lastBuild.URL, "http") {
-				lastBuild.Fetch()
+        for _, job := range buildDownstreamJobs {
+            lastBuild := job.LastBuild
+            if strings.Contains(lastBuild.URL, "http") {
+                lastBuild.Fetch()
 
-				if jenkins_types.BuildTriggerMatchesParent(lastBuild, build) {
-					retVal.List = append(retVal.List, lastBuild)
-				}
-			} else {
-				continue
-			}
-		}
-	}
+                if jenkins_types.BuildTriggerMatchesParent(lastBuild, build) {
+                    retVal.List = append(retVal.List, lastBuild)
+                }
+            } else {
+                continue
+            }
+        }
+    }
 
-	return retVal
+    return retVal
 }
 
 // Pull will pull all jobs starting at the top., those jobs then need to be aggregated.
 func (o *Ordered) Pull(pipeline_name string, pipeline_version string) jenkins_types.Pipeline {
-	urlWithFilter := fmt.Sprintf(o.URL + o.filter())
+    urlWithFilter := fmt.Sprintf(o.URL + o.filter())
 
-	fmt.Printf("Pulling Ordered Job Data from latest build: %s\n", urlWithFilter)
-	body := o.Get(urlWithFilter)
+    fmt.Printf("Pulling Ordered Job Data from latest build: %s\n", urlWithFilter)
+    body := o.Get(urlWithFilter)
 
-	json.Unmarshal(body, &o)
+    json.Unmarshal(body, &o)
 
-	// This needs to be processed by a job aggregator.
+    // This needs to be processed by a job aggregator.
 
-	var jd jenkins_types.BuildsAndJobs
+    var jd jenkins_types.BuildsAndJobs
 
-	lastBuild := o.LastBuild
-	lastBuild.Fetch()
+    lastBuild := o.LastBuild
+    lastBuild.Fetch()
 
-	/*
-	 * This gets all the builds and jobs from the Ordered Job, for example:
-	 * https://jenkins.example.com/job/project_2016.4.x
-	 */
-	jd.Jobs, jd.Builds = jenkins_types.OrderedJobsAndBuildsFromDownstreamProjects(lastBuild, o.DownstreamProjects)
-	// jd.Builds = BuildsFromAllJobs(o.LastBuild, jd.Jobs)
+    /*
+     * This gets all the builds and jobs from the Ordered Job, for example:
+     * https://jenkins.example.com/job/project_2016.4.x
+     */
+    jd.Jobs, jd.Builds = jenkins_types.OrderedJobsAndBuildsFromDownstreamProjects(lastBuild, o.DownstreamProjects)
+    // jd.Builds = BuildsFromAllJobs(o.LastBuild, jd.Jobs)
 
-	lastBuild.TopLevelBuild = true
-	jd.Builds = append(jd.Builds, lastBuild)
-	fmt.Printf("======= ProcessTopLevelBuilds =====")
-	// subJobsBuilds := o.ProcessTopLevelBuilds(jd)
+    lastBuild.TopLevelBuild = true
+    jd.Builds = append(jd.Builds, lastBuild)
+    fmt.Printf("======= ProcessTopLevelBuilds =====")
+    // subJobsBuilds := o.ProcessTopLevelBuilds(jd)
 
-	subJobsBuilds := jenkins_types.Builds{List: jd.Builds}
+    subJobsBuilds := jenkins_types.Builds{List: jd.Builds}
 
-	jobData, trainData := subJobsBuilds.GetJobData(pipeline_name, pipeline_version)
+    jobData, trainData := subJobsBuilds.GetJobData(pipeline_name, pipeline_version)
 
-	/*
-	 *  Here is where I left off, I need to process all the builds for the sub jobs and turn it into job data.
-	 */
+    /*
+     *  Here is where I left off, I need to process all the builds for the sub jobs and turn it into job data.
+     */
 
-	return jenkins_types.Pipeline{JobData: jobData, URL: o.URL, BuildNumber: lastBuild.Number, TrainData: trainData}
+    return jenkins_types.Pipeline{JobData: jobData, URL: o.URL, BuildNumber: lastBuild.Number, TrainData: trainData}
 }
