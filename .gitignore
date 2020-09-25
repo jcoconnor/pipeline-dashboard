@@ -12,3 +12,4 @@ updated
 frontend/src/data_updated.js
 
 .vscode/
+.npm/
