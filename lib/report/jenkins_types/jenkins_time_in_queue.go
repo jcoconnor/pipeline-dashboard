@@ -5,20 +5,20 @@ package jenkins_types
  */
 
 type TimeInQueue struct {
-	BlockedDurationMillis   int
-	BlockedTimeMillis       int
-	BuildableDurationMillis int
-	BuildableTimeMillis     int
-	BuildingDurationMillis  int
-	ExecutingTimeMillis     int
-	ExecutorUtilization     int
-	SubTaskCount            int
-	WaitingDurationMillis   int
-	WaitingTimeMillis       int
+    BlockedDurationMillis   int
+    BlockedTimeMillis       int
+    BuildableDurationMillis int
+    BuildableTimeMillis     int
+    BuildingDurationMillis  int
+    ExecutingTimeMillis     int
+    ExecutorUtilization     int
+    SubTaskCount            int
+    WaitingDurationMillis   int
+    WaitingTimeMillis       int
 }
 
 // Milliseconds
 func (t *TimeInQueue) QueueTime() int {
-	// var project string
-	return t.BlockedDurationMillis + t.BuildableDurationMillis
+    // var project string
+    return t.BlockedDurationMillis + t.BuildableDurationMillis
 }

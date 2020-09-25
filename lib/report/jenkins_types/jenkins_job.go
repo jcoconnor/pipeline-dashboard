@@ -3,19 +3,20 @@ package jenkins_types
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/puppetlabs/pipeline-dashboard/lib/report/utils"
 )
 
 type Job struct {
-	utils.Getable
-	Name               string  `json:"name"`
-	Class              string  `json:"_class"`
-	Buildable          bool    `json:"buildable"`
-	Builds             []Build `json:"builds"`
-	LastBuild          Build   `json:"lastBuild"`
-	URL                string
-	DownstreamProjects []Project `json:"downstreamProjects"`
-	Runs               []Project `json:"runs"`
+    utils.Getable
+    Name               string  `json:"name"`
+    Class              string  `json:"_class"`
+    Buildable          bool    `json:"buildable"`
+    Builds             []Build `json:"builds"`
+    LastBuild          Build   `json:"lastBuild"`
+    URL                string
+    DownstreamProjects []Project `json:"downstreamProjects"`
+    Runs               []Project `json:"runs"`
 }
 
 // func BuildsFromAllJobs(topBuild jenkins_types.Build, jobs []jenkins_types.Job) []jenkins_types.Build {
@@ -33,83 +34,83 @@ type Job struct {
  * Since each job extends from the previous, we have to check it against the job in sequence, not completely seperately.
  */
 func OrderedJobsAndBuildsFromDownstreamProjects(parentBuild Build, projects []Project) ([]Job, []Build) {
-	var jobs []Job
-	var builds []Build
-	for _, dp := range projects {
-		job := Job{URL: dp.URL}
-		job.Fetch()
+    var jobs []Job
+    var builds []Build
+    for _, dp := range projects {
+        job := Job{URL: dp.URL}
+        job.Fetch()
 
-		// Add the first job in the list
-		jobs = append(jobs, job)
+        // Add the first job in the list
+        jobs = append(jobs, job)
 
-		fmt.Println("***************")
-		// Check to see which builds matches the aformentioned subjob
-		matches, matchingBuild := AllBuildsTriggerMatchesParent(job, parentBuild)
+        fmt.Println("***************")
+        // Check to see which builds matches the aformentioned subjob
+        matches, matchingBuild := AllBuildsTriggerMatchesParent(job, parentBuild)
 
-		if matches {
-			allSubJobs, allSubBuilds := job.AllJobs(matchingBuild)
-			jobs = append(jobs, allSubJobs...)
-			builds = append(builds, allSubBuilds...)
-			fmt.Printf("------ Added build: %s\n", matchingBuild.FullDisplayName)
-			builds = append(builds, matchingBuild)
-		} else {
-			fmt.Printf("------ Didn't Add Build: %s\n", matchingBuild.FullDisplayName)
-		}
+        if matches {
+            allSubJobs, allSubBuilds := job.AllJobs(matchingBuild)
+            jobs = append(jobs, allSubJobs...)
+            builds = append(builds, allSubBuilds...)
+            fmt.Printf("------ Added build: %s\n", matchingBuild.FullDisplayName)
+            builds = append(builds, matchingBuild)
+        } else {
+            fmt.Printf("------ Didn't Add Build: %s\n", matchingBuild.FullDisplayName)
+        }
 
-	}
+    }
 
-	return jobs, builds
+    return jobs, builds
 }
 
 func JobsFromDownstreamProjects(parentBuild Build, projects []Project) ([]Build, []Job) {
-	var jobs []Job
-	var builds []Build
+    var jobs []Job
+    var builds []Build
 
-	for _, dp := range projects {
-		job := Job{URL: dp.URL}
-		job.Fetch()
+    for _, dp := range projects {
+        job := Job{URL: dp.URL}
+        job.Fetch()
 
-		matches, matchedBuild := AllBuildsTriggerMatchesParent(job, parentBuild)
-		if matches {
-			builds = append(builds, matchedBuild)
-			utils.Log(fmt.Sprintf("Adding Build: %s ", matchedBuild.FullDisplayName), "")
-			foundJobs, foundBuilds := job.AllJobs(matchedBuild)
-			jobs = append(jobs, foundJobs...)
-			builds = append(builds, foundBuilds...)
-		}
+        matches, matchedBuild := AllBuildsTriggerMatchesParent(job, parentBuild)
+        if matches {
+            builds = append(builds, matchedBuild)
+            utils.Log(fmt.Sprintf("Adding Build: %s ", matchedBuild.FullDisplayName), "")
+            foundJobs, foundBuilds := job.AllJobs(matchedBuild)
+            jobs = append(jobs, foundJobs...)
+            builds = append(builds, foundBuilds...)
+        }
 
-	}
+    }
 
-	return builds, jobs
+    return builds, jobs
 }
 
 func (j *Job) filter() string {
-	return "api/json?tree=name,buildable,builds[duration,fullDisplayName,name,runs[number,url],timestamp,url],lastBuild[duration,fullDisplayName,name,runs[number,url],timestamp,url],downstreamProjects[url],runs[number,url]&depth=2"
+    return "api/json?tree=name,buildable,builds[duration,fullDisplayName,name,runs[number,url],timestamp,url],lastBuild[duration,fullDisplayName,name,runs[number,url],timestamp,url],downstreamProjects[url],runs[number,url]&depth=2"
 }
 
 func (j *Job) AllJobs(buildWhichMatchesParent Build) ([]Job, []Build) {
-	var jobs []Job
-	var builds []Build
+    var jobs []Job
+    var builds []Build
 
-	if len(j.DownstreamProjects) > 0 {
-		foundJobs, foundBuilds := OrderedJobsAndBuildsFromDownstreamProjects(buildWhichMatchesParent, j.DownstreamProjects)
-		jobs = append(jobs, foundJobs...)
-		builds = append(builds, foundBuilds...)
-	}
+    if len(j.DownstreamProjects) > 0 {
+        foundJobs, foundBuilds := OrderedJobsAndBuildsFromDownstreamProjects(buildWhichMatchesParent, j.DownstreamProjects)
+        jobs = append(jobs, foundJobs...)
+        builds = append(builds, foundBuilds...)
+    }
 
-	jobs = append(jobs, *j)
+    jobs = append(jobs, *j)
 
-	return jobs, builds
+    return jobs, builds
 }
 
 func (j *Job) Fetch() Job {
-	urlWithFilter := j.URL + j.filter()
+    urlWithFilter := j.URL + j.filter()
 
-	body := j.Get(urlWithFilter)
+    body := j.Get(urlWithFilter)
 
-	json.Unmarshal(body, &j)
+    json.Unmarshal(body, &j)
 
-	// utils.Log(fmt.Sprintf("Fetching Job: %s", j.Name), j.URL)
+    // utils.Log(fmt.Sprintf("Fetching Job: %s", j.Name), j.URL)
 
-	return *j
+    return *j
 }

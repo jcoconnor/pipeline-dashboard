@@ -10,19 +10,19 @@ import (
 )
 
 func lastUpdated() float64 {
-	content, err := ioutil.ReadFile("updated")
+    content, err := ioutil.ReadFile("updated")
 
-	if err != nil {
-		log.Fatal(err)
-	}
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	intLastUpdated, err := strconv.ParseFloat(strings.TrimSpace(string(content)), 32)
+    intLastUpdated, err := strconv.ParseFloat(strings.TrimSpace(string(content)), 32)
 
-	if err != nil {
-		fmt.Println(err)
-	}
+    if err != nil {
+        fmt.Println(err)
+    }
 
-	secondsSinceLastUpdate := float64(time.Now().Unix()) - intLastUpdated
-	return secondsSinceLastUpdate
+    secondsSinceLastUpdate := float64(time.Now().Unix()) - intLastUpdated
+    return secondsSinceLastUpdate
 
 }

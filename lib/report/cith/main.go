@@ -9,118 +9,118 @@ import (
 )
 
 type CithFailure struct {
-	BuildNumber  int
-	CategoryName string
-	CategorySlug string
-	Master       string
-	ProjectName  string
-	YearMonthDay string
+    BuildNumber  int
+    CategoryName string
+    CategorySlug string
+    Master       string
+    ProjectName  string
+    YearMonthDay string
 }
 
 type CithFailureCauseData struct {
-	Categories []struct {
-		Name  string `json:"name"`
-		Value string `json:"value"`
-	} `json:"categories"`
-	RecentOccurences []struct {
-		ID           map[string]string `json:"_id"`
-		ProjectName  string            `json:"projectName"`
-		BuildNumber  int               `json:"buildNumber"`
-		Master       string            `json:"master"`
-		YearMonthDay string            `json:"yearMonthDay"`
-		HostURL      string            `json:"hostURL"`
-	} `json:"recent_occurrences"`
+    Categories []struct {
+        Name  string `json:"name"`
+        Value string `json:"value"`
+    } `json:"categories"`
+    RecentOccurences []struct {
+        ID           map[string]string `json:"_id"`
+        ProjectName  string            `json:"projectName"`
+        BuildNumber  int               `json:"buildNumber"`
+        Master       string            `json:"master"`
+        YearMonthDay string            `json:"yearMonthDay"`
+        HostURL      string            `json:"hostURL"`
+    } `json:"recent_occurrences"`
 }
 
 type DailyPrevalentFailureCause struct {
-	CithURL string
-	Count   int    `json:"count"`
-	ID      string `json:"id"`
+    CithURL string
+    Count   int    `json:"count"`
+    ID      string `json:"id"`
 }
 
 func (d *DailyPrevalentFailureCause) URL() string {
-	return fmt.Sprintf("%s/api/v1/failure-cause/%s", d.CithURL, d.ID)
+    return fmt.Sprintf("%s/api/v1/failure-cause/%s", d.CithURL, d.ID)
 }
 
 func (d *DailyPrevalentFailureCause) FailureCauseData() []CithFailure {
-	fmt.Printf("Getting %s\n", d.URL())
+    fmt.Printf("Getting %s\n", d.URL())
 
-	resp, err := http.Get(d.URL())
+    resp, err := http.Get(d.URL())
 
-	if err != nil {
-		panic(err)
-	}
+    if err != nil {
+        panic(err)
+    }
 
-	defer resp.Body.Close()
+    defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+    body, err := ioutil.ReadAll(resp.Body)
 
-	var cithData CithFailureCauseData
+    var cithData CithFailureCauseData
 
-	json.Unmarshal(body, &cithData)
+    json.Unmarshal(body, &cithData)
 
-	var cithFailures []CithFailure
+    var cithFailures []CithFailure
 
-	for _, occurence := range cithData.RecentOccurences {
-		cithFailures = append(cithFailures, CithFailure{
-			CategoryName: cithData.Categories[0].Name,
-			CategorySlug: cithData.Categories[0].Value,
-			ProjectName:  occurence.ProjectName,
-			BuildNumber:  occurence.BuildNumber,
-			YearMonthDay: occurence.YearMonthDay,
-			Master:       occurence.Master,
-		})
-	}
+    for _, occurence := range cithData.RecentOccurences {
+        cithFailures = append(cithFailures, CithFailure{
+            CategoryName: cithData.Categories[0].Name,
+            CategorySlug: cithData.Categories[0].Value,
+            ProjectName:  occurence.ProjectName,
+            BuildNumber:  occurence.BuildNumber,
+            YearMonthDay: occurence.YearMonthDay,
+            Master:       occurence.Master,
+        })
+    }
 
-	return cithFailures
+    return cithFailures
 }
 
 type DataByJenkinsServer struct {
-	DailyFailureCauseOccurences int `json:"daily_failure_cause_occurences"`
-	// DailyFailureByType map[string]interface{} `json:"daily_failures_by_type"`
-	DailyPrevalentFailureCauses map[string]DailyPrevalentFailureCause `json:"daily_prevalent_failure_causes"`
+    DailyFailureCauseOccurences int `json:"daily_failure_cause_occurences"`
+    // DailyFailureByType map[string]interface{} `json:"daily_failures_by_type"`
+    DailyPrevalentFailureCauses map[string]DailyPrevalentFailureCause `json:"daily_prevalent_failure_causes"`
 }
 
 type CithDashboardData struct {
-	Data        map[string]DataByJenkinsServer
-	RefreshRate int
+    Data        map[string]DataByJenkinsServer
+    RefreshRate int
 }
 
 func GetPrevalentFailureCauses(CithURL string) []CithFailure {
-	currentTime := time.Now()
-	today := currentTime.Format("2006-01-02")
+    currentTime := time.Now()
+    today := currentTime.Format("2006-01-02")
 
-	URL := fmt.Sprintf("%s/api/v1/jenkins/statistics-for-dashboard?from=%s&to=%s", CithURL, today, today)
-	fmt.Printf("Getting %s\n", URL)
+    URL := fmt.Sprintf("%s/api/v1/jenkins/statistics-for-dashboard?from=%s&to=%s", CithURL, today, today)
+    fmt.Printf("Getting %s\n", URL)
 
-	resp, err := http.Get(URL)
+    resp, err := http.Get(URL)
 
-	if err != nil {
-		panic(err)
-	}
+    if err != nil {
+        panic(err)
+    }
 
-	defer resp.Body.Close()
+    defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+    body, err := ioutil.ReadAll(resp.Body)
 
-	var cithData CithDashboardData
+    var cithData CithDashboardData
 
-	json.Unmarshal(body, &cithData)
+    json.Unmarshal(body, &cithData)
 
-	var allFailures []CithFailure
+    var allFailures []CithFailure
 
-	for _, v := range cithData.Data["All Jenkins instances"].DailyPrevalentFailureCauses {
-		v.CithURL = CithURL
-		allFailures = append(allFailures, v.FailureCauseData()...)
-	}
+    for _, v := range cithData.Data["All Jenkins instances"].DailyPrevalentFailureCauses {
+        v.CithURL = CithURL
+        allFailures = append(allFailures, v.FailureCauseData()...)
+    }
 
-	return allFailures
+    return allFailures
 }
 
 func Remove(slice []CithFailure, s int) []CithFailure {
-	fmt.Printf("Removing slice at location %d\n", s)
-	if s+1 <= len(slice) {
-		return append(slice[:s], slice[s+1:]...)
-	}
-	return slice[:s]
+    fmt.Printf("Removing slice at location %d\n", s)
+    if s+1 <= len(slice) {
+        return append(slice[:s], slice[s+1:]...)
+    }
+    return slice[:s]
 }

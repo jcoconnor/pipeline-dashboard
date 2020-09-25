@@ -5,20 +5,20 @@ import (
 )
 
 type Link struct {
-	URL   string
-	Title string
+    URL   string
+    Title string
 }
 
 func GetLinks() []Link {
-	configData := config.GetConfig()
+    configData := config.GetConfig()
 
-	var retVal []Link
-	for _, link := range configData.Links {
-		retVal = append(retVal, Link{
-			URL:   link.URL,
-			Title: link.Title,
-		})
-	}
+    var retVal []Link
+    for _, link := range configData.Links {
+        retVal = append(retVal, Link{
+            URL:   link.URL,
+            Title: link.Title,
+        })
+    }
 
-	return retVal
+    return retVal
 }
