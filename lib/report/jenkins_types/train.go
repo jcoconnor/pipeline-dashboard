@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/puppetlabs/pipeline-dashboard/lib/report/constants"
 	"github.com/puppetlabs/pipeline-dashboard/lib/report/utils"
 )
 
@@ -142,7 +143,7 @@ func (t *Train) GetEndTime() time.Time {
 }
 
 func OpenTrainCSV() *csv.Writer {
-    file, err := os.OpenFile("trains.csv", os.O_WRONLY|os.O_APPEND, 0644)
+    file, err := os.OpenFile(constants.Trains_filename, os.O_WRONLY|os.O_CREATE, 0644)
     utils.CheckError("Cannot create file", err)
 
     file.WriteString("\n")

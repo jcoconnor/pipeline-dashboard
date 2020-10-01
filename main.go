@@ -1,16 +1,18 @@
 package main
 
 import (
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"os"
+	"time"
 
+	"github.com/go-co-op/gocron"
 	"github.com/puppetlabs/pipeline-dashboard/config"
 	"github.com/puppetlabs/pipeline-dashboard/lib/report"
 	"github.com/puppetlabs/pipeline-dashboard/lib/report/cith"
+	"github.com/puppetlabs/pipeline-dashboard/lib/report/constants"
 	"github.com/puppetlabs/pipeline-dashboard/lib/report/jenkins_types"
 	"github.com/puppetlabs/pipeline-dashboard/lib/report/utils"
+	"github.com/puppetlabs/pipeline-dashboard/lib/web"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -103,35 +105,8 @@ func JenkinsData(config config.Config) []jenkins_types.Pipeline {
     return allJenkinsData
 }
 
-func main() {
 
-    fileA, _ := os.Create("result.csv")
-    fileB, _ := os.Create("trains.csv")
-
-    writer := csv.NewWriter(fileB)
-
-    writer.Write([]string{
-        "URL",
-        "ProjectName",
-        "ProjectVersion",
-        "Name",
-        "DurationMinutes",
-        "QueueTimeMinutes",
-        "Time",
-        "TimeStamp",
-    })
-
-    fileA.Close()
-    fileB.Close()
-
-    runConfig := config.GetConfig()
-
-    pflag.Bool("hidetreelog", false, "Whether or not to hide the long tree log")
-    pflag.Bool("no-cache", true, "Whether or not to use a cache")
-    pflag.Parse()
-    viper.BindPFlags(pflag.CommandLine)
-
-    runConfig.SetUseCache(viper.GetBool("no-cache"))
+func UpdateData(runConfig config.Config) {
 
     cithFailures := CithFailures(runConfig)
     jenkinsData := JenkinsData(runConfig)
@@ -144,4 +119,26 @@ func main() {
     }
 
     report.WriteToCSV(compiledData)
+}
+
+
+func main() {
+
+    pflag.Bool("hidetreelog", false, "Whether or not to hide the long tree log")
+    pflag.Bool("no-cache", true, "Whether or not to use a cache")
+    pflag.Uint64("scrape-interval", constants.SCRAPE_INTERVAL, "Interval in Seconds to scrape Jenkins/CITH")
+    pflag.Parse()
+    viper.BindPFlags(pflag.CommandLine)
+    runConfig := config.GetConfig()
+
+    runConfig.SetUseCache(viper.GetBool("no-cache"))
+    
+    // Schedule UPdateData  to run every interval, with an initial first run.
+    // These are run async so that we can run web server concurrently.
+    s1 := gocron.NewScheduler(time.UTC)
+    s1.Every(viper.GetUint64("scrape-interval")).Seconds().StartImmediately().Do(UpdateData, runConfig)
+    s1.StartAsync()
+
+    // Run Web server in this thread until end.
+    web.Serve()
 }

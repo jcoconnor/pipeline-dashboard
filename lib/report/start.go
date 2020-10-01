@@ -125,6 +125,9 @@ func ApplyCith(pipelines []jenkins_types.Pipeline, cithFailures []cith.CithFailu
 
     }
 
+    // Locks added around file writes to prevent issues with updater.
+    utils.Lock()
+    defer utils.Unlock()
     csv := jenkins_types.OpenTrainCSV()
 
     for _, pipeline := range pipelines {
@@ -140,5 +143,8 @@ func ApplyCith(pipelines []jenkins_types.Pipeline, cithFailures []cith.CithFailu
 }
 
 func WriteToCSV(pipelines []jenkins_types.Pipeline) {
+    // Locks added around file writes to prevent issues with updater.
+    utils.Lock()
+    defer utils.Unlock()
     csv_writers.WritePipelines(pipelines)
 }

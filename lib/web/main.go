@@ -15,21 +15,44 @@ import (
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/puppetlabs/pipeline-dashboard/lib/report/constants"
 	"github.com/puppetlabs/pipeline-dashboard/lib/report/jenkins_types"
+	"github.com/puppetlabs/pipeline-dashboard/lib/report/utils"
 )
 
 type Page struct {
-    Title    string
-    Jobs     []jenkins_types.Pipeline
-    Trains   []jenkins_types.TrainStrings
-    Links    []jenkins_types.Link
-    Products []jenkins_types.Product
+    Title       string
+    LastUpdated string
+    Jobs        []jenkins_types.Pipeline
+    Trains      []jenkins_types.TrainStrings
+    Links       []jenkins_types.Link
+    Products    []jenkins_types.Product
 }
 
 func (h *Handlers) GeneratePageData() *Page {
     title := "CI Dashboard"
 
-    csvFile, _ := os.Open("result.csv")
+    fmt.Println("Generating Page Data.")
+
+    // Lock for accessing files, but defer to ensure we release it on return.
+    utils.Lock()
+    defer utils.Unlock()
+
+    // Does file exist - otherwise return with no page data
+    statinfo, err := os.Stat(constants.Results_filename)
+    if os.IsNotExist(err) {
+        h.Page = nil
+        return h.Page
+    }
+    lastupdated := statinfo.ModTime().Format(http.TimeFormat)
+
+    csvFile, err := os.Open(constants.Results_filename)
+    if (err != nil) {
+        fmt.Println(err.Error())
+        h.Page = nil
+        return h.Page
+    }
+    defer csvFile.Close()
     reader := csv.NewReader(bufio.NewReader(csvFile))
 
     var jobs []jenkins_types.Pipeline
@@ -69,7 +92,12 @@ func (h *Handlers) GeneratePageData() *Page {
         })
     }
 
-    trainCSVFile, _ := os.Open("trains.csv")
+    trainCSVFile, _ := os.Open(constants.Trains_filename)
+    if (err != nil) {
+        fmt.Println(err.Error())
+        return h.Page
+    }
+    defer trainCSVFile.Close()
     trainReader := csv.NewReader(bufio.NewReader(trainCSVFile))
 
     var trains []jenkins_types.TrainStrings
@@ -124,7 +152,7 @@ func (h *Handlers) GeneratePageData() *Page {
         h.Products[i] = product
     }
 
-    h.Page = &Page{Title: title, Jobs: jobs, Trains: trains, Products: h.Products, Links: h.Links}
+    h.Page = &Page{Title: title, LastUpdated: lastupdated, Jobs: jobs, Trains: trains, Products: h.Products, Links: h.Links}
 
     return h.Page
 }
@@ -141,17 +169,17 @@ type Handlers struct {
 }
 
 func (handlers *Handlers) ProductsHandler(w http.ResponseWriter, r *http.Request) {
+    handlers.GeneratePageData()
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusCreated)
 
     json.NewEncoder(w).Encode(handlers.Page)
 }
 
-func (handlers *Handlers) LinksHandler(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Content-Type", "application/json")
+func (handlers *Handlers) HealthCheck(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusCreated)
 
-    json.NewEncoder(w).Encode(handlers.Page)
+    w.Write([]byte("OK"))
 }
 
 func Serve() {
@@ -161,7 +189,6 @@ func Serve() {
         Products: jenkins_types.GetProducts(),
         Links:    jenkins_types.GetLinks(),
     }
-    handlers.GeneratePageData()
 
     http.Handle("/", http.FileServer(http.Dir("./public/")))
 
@@ -171,11 +198,9 @@ func Serve() {
     http.Handle("/static/js/", fs)
 
     http.HandleFunc("/api/1/products", handlers.ProductsHandler)
-    http.HandleFunc("/api/1/links", handlers.LinksHandler)
-
     http.Handle("/metrics", handlers.GenerateMetrics(promhttp.Handler()))
+    http.HandleFunc("/api/1/healthcheck", handlers.HealthCheck)
 
-    // http.HandleFunc("/", handler)
     fmt.Println("Listening on port :8080")
 
     log.Fatal(http.ListenAndServe(":8080", nil))

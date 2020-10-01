@@ -4,12 +4,13 @@ import (
 	"encoding/csv"
 	"os"
 
+	"github.com/puppetlabs/pipeline-dashboard/lib/report/constants"
 	"github.com/puppetlabs/pipeline-dashboard/lib/report/jenkins_types"
 	"github.com/puppetlabs/pipeline-dashboard/lib/report/utils"
 )
 
 func WritePipelines(allPipelines []jenkins_types.Pipeline) {
-    file, err := os.OpenFile("result.csv", os.O_WRONLY|os.O_APPEND, 0644)
+    file, err := os.OpenFile(constants.Results_filename, os.O_WRONLY|os.O_CREATE, 0644)
     utils.CheckError("Cannot create file", err)
     defer file.Close()
 

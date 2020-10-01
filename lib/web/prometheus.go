@@ -14,6 +14,16 @@ import (
 func (handlers *Handlers) GenerateMetrics(next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         // Our middleware logic goes here...
+        handlers.GeneratePageData()
+        if (handlers.Page == nil) {
+            // Not totally sure if this is the best treatment here, but
+            // in testing it seems to avoid the stack dump errors on the
+            // console and web requests to http://localhost:8080/metrics seem
+            // to behave beningly (i.e. return no data)
+            return 
+        }
+        // TBD - Check that Page is Not Null - or do we wait and loop ?
+        // Probably a Null check and return - safer.
         for _, job := range handlers.Page.Jobs {
             tH, _ := strconv.Atoi(job.JobDataStrings.TotalHours)
             tM, _ := strconv.Atoi(job.JobDataStrings.TotalMinutes)
