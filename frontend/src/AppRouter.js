@@ -59,18 +59,3 @@ class AppRouter extends React.Component {
 
 export default AppRouter;
 
-// <Navbar bg="light" expand="lg" className="bg-light justify-content-between">
-//   <Navbar.Brand href="/">Home</Navbar.Brand>
-//   <Nav className="mr-auto">
-//     <Nav.Link href="/">Home</Nav.Link>
-//     <Nav.Link href="/timeline">Timeline</Nav.Link>
-//   </Nav>
-//
-//   <Navbar.Collapse className="justify-content-end">
-//     <Navbar.Text className="mr-sm-2">
-//       Current Time: { new Date().toLocaleString('en-US') }
-//     </Navbar.Text>
-//   </Navbar.Collapse>
-// </Navbar>
-// <br />
-// <br />

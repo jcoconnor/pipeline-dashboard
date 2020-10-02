@@ -1,0 +1,4 @@
+# Prune out frontend build modules and some other stuff to
+# reduce context sent to the docker build daemon.
+frontend/node_modules
+public

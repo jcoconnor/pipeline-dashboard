@@ -5,7 +5,6 @@ result.csv
 config.toml
 
 public/*
-web
 main
 main\.exe
 updated
@@ -13,3 +12,4 @@ frontend/src/data_updated.js
 
 .vscode/
 .npm/
+.vagrant/
