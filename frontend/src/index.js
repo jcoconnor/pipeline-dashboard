@@ -13,7 +13,10 @@ import '@puppet/react-components/source/scss/library/ui.scss';
 class RootStore {
   constructor() {
     this.dataStore           = new DataStore(this)
-    this.dataStore.fetchProducts(function() {});
+    this.dataStore.fetchProducts().then((store) => {
+      // set state here to re-render when new data appeared
+    });
+    console.log(this)
 
   }
 }

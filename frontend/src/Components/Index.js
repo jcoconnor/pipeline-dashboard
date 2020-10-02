@@ -52,7 +52,6 @@ class Index extends Component {
           <Product product={product} key={index} trains={this.props.rootStore.dataStore.trains} jobs={this.props.rootStore.dataStore.jobs} />
         )
       });
-
     }
 
     return (
@@ -112,6 +111,9 @@ class Index extends Component {
         <div className="rc-table">
           {productsTable}
         </div>
+        <ul>
+          <li>Last Updated: {this.props.rootStore.dataStore.lastupdated}</li>
+        </ul>
         <ul>
           {this.props.rootStore.dataStore.links.map((link) => {
             return <li><a href={link.url}>{link.title}</a></li>
