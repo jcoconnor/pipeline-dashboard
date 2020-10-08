@@ -1,0 +1,30 @@
+cith_url = "http://cith_url"
+
+# "products" are essentially categories to organize your jobs.
+[[products]]
+name = "Product 1"
+pipeline = "product-1"
+
+[[products]]
+name = "Product 2"
+pipeline = "product-2"
+
+[[kickoff_jobs]]
+url = "https://jenkins.example.com/job/product_1_2018.1.x"
+product = "product-1"
+version = "2018.1.x"
+
+[[kickoff_jobs]]
+url = "https://jenkins.example.com/job/product_1_2019.1.x"
+product = "product-1"
+version = "2019.1.x"
+
+[[kickoff_jobs]]
+url = "https://jenkins.example.com/job/product_2_2018.1.x"
+product = "product-2"
+version = "2018.1.x"
+
+[[kickoff_jobs]]
+url = "https://jenkins.example.com/job/product_2_2019.1.x"
+product = "product-2"
+version = "2019.1.x"
