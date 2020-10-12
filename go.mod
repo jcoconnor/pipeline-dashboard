@@ -6,7 +6,7 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/go-co-op/gocron v0.3.1
 	github.com/go-openapi/strfmt v0.19.5 // indirect
-	github.com/go-redis/redis/v8 v8.2.3
+	github.com/go-redis/redis/v8 v8.3.0
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
