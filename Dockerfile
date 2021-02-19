@@ -8,7 +8,7 @@ COPY go.sum /app
 RUN go build -o main main.go
 
 # Now we build the js
-FROM node:10.22.1-alpine3.11 as jsbuilder
+FROM node:15.9.0-alpine3.11 as jsbuilder
 RUN mkdir -p /app/frontend
 WORKDIR /app/frontend
 COPY frontend ./
