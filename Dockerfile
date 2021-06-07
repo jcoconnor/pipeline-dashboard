@@ -1,5 +1,5 @@
 # First build the Golang build.
-FROM golang:1.15.2-alpine as gobuilder
+FROM golang:1.16.5-alpine as gobuilder
 RUN mkdir -p /app/backend
 WORKDIR /app/backend
 COPY backend ./
