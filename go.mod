@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/go-co-op/gocron v0.3.1
+	github.com/go-co-op/gocron v1.18.0
 	github.com/go-openapi/strfmt v0.19.5 // indirect
 	github.com/go-redis/redis/v8 v8.2.3
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
