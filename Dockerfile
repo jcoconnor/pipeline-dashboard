@@ -16,7 +16,7 @@ RUN npm install
 RUN npm run-script build
 
 # Now start the actual Docker dontainer.
-FROM alpine:3.11
+FROM alpine:3.16.3
 RUN mkdir -p /app/conf
 WORKDIR /app
 COPY --from=gobuilder /app/backend/main /app/main
